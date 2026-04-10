@@ -1,0 +1,25 @@
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project Specific
+/backend/build/
+/backend/.gradle/
+/bo/node_modules/
+/bo/dist/
+/frontend/node_modules/
+/frontend/dist/
+
+# Local Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
