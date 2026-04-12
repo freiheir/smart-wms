@@ -1,81 +1,118 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import { useRoute } from 'vue-router'
 
-interface Item {
-  id: number;
-  itemCode: string;
-  itemName: string;
-  description: string;
-  price: number;
-  stockQuantity: number;
-}
-
-const items = ref<Item[]>([])
-const loading = ref(true)
-const error = ref('')
-
-const fetchItems = async () => {
-  try {
-    const response = await axios.get('/api/items')
-    items.value = response.data
-    loading.value = false
-  } catch (err) {
-    error.value = '데이터를 불러오는 중 오류가 발생했습니다.'
-    loading.value = false
-    console.error(err)
-  }
-}
-
-onMounted(() => {
-  fetchItems()
-})
+const route = useRoute()
 </script>
 
 <template>
-  <div class="bo-container">
-    <h1>Smart WMS/ERP Back Office</h1>
-    <div v-if="loading">로딩 중...</div>
-    <div v-else-if="error">{{ error }}</div>
-    <table v-else class="item-table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>품목 코드</th>
-          <th>품목 이름</th>
-          <th>가격</th>
-          <th>재고</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="item in items" :key="item.id">
-          <td>{{ item.id }}</td>
-          <td>{{ item.itemCode }}</td>
-          <td>{{ item.itemName }}</td>
-          <td>{{ item.price.toLocaleString() }}원</td>
-          <td>{{ item.stockQuantity }}개</td>
-        </tr>
-      </tbody>
-    </table>
+  <div class="layout">
+    <!-- 사이드바 메뉴 -->
+    <aside class="sidebar">
+      <div class="logo">
+        <h2>Smart WMS BO</h2>
+      </div>
+      <nav class="menu">
+        <router-link to="/items" class="menu-item" active-class="active">
+          <span class="icon">📦</span> 상품 관리
+        </router-link>
+        <router-link to="/stock-status" class="menu-item" active-class="active">
+          <span class="icon">🚚</span> 입출고 현황
+        </router-link>
+      </nav>
+    </aside>
+
+    <!-- 메인 콘텐츠 영역 -->
+    <main class="content">
+      <header class="header">
+        <h1>{{ route.meta.title || '환영합니다' }}</h1>
+      </header>
+      <section class="main-view">
+        <router-view></router-view>
+      </section>
+    </main>
   </div>
 </template>
 
 <style>
-.bo-container {
-  padding: 20px;
-  font-family: sans-serif;
+/* 전역 초기화 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
-.item-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
+
+body {
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+  background-color: #f5f7fa;
+  color: #2c3e50;
 }
-.item-table th, .item-table td {
-  border: 1px solid #ddd;
-  padding: 12px;
-  text-align: left;
+
+.layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
 }
-.item-table th {
-  background-color: #f4f4f4;
+
+/* 사이드바 스타일 */
+.sidebar {
+  width: 260px;
+  background-color: #2c3e50;
+  color: #ecf0f1;
+  display: flex;
+  flex-direction: column;
+}
+
+.logo {
+  padding: 30px 20px;
+  border-bottom: 1px solid #34495e;
+  text-align: center;
+}
+
+.menu {
+  padding: 20px 0;
+  flex: 1;
+}
+
+.menu-item {
+  display: block;
+  padding: 15px 25px;
+  color: #bdc3c7;
+  text-decoration: none;
+  transition: all 0.3s;
+  font-size: 1.1rem;
+}
+
+.menu-item:hover {
+  background-color: #34495e;
+  color: #ffffff;
+}
+
+.menu-item.active {
+  background-color: #3498db;
+  color: #ffffff;
+  border-left: 5px solid #ffffff;
+}
+
+.icon {
+  margin-right: 10px;
+}
+
+/* 메인 콘텐츠 스타일 */
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.header {
+  background-color: #ffffff;
+  padding: 20px 40px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.main-view {
+  padding: 40px;
+  flex: 1;
 }
 </style>

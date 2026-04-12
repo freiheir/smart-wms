@@ -1,3 +1,5 @@
+server:
+  port: 5182
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/wmserp

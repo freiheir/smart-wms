@@ -10,7 +10,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Item {
+public class Item extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,4 +29,16 @@ public class Item {
 
     @Column(nullable = false)
     private Integer stockQuantity;
+
+    @Column(nullable = false)
+    private String itemUnit; // EA, BOX, PLT 등
+
+    @Column(unique = true)
+    private String barcode;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private String useYn = "Y";
+
+    private String category;
 }

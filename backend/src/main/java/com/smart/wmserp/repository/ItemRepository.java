@@ -9,4 +9,5 @@ import java.util.Optional;
 @Repository
 public interface ItemRepository extends JpaRepository<Item, Long> {
     Optional<Item> findByItemCode(String itemCode);
+    Optional<Item> findByBarcode(String barcode);
 }
