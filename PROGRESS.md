@@ -14,8 +14,10 @@
 - [x] **프론트엔드(React):** Vite 기반 개발 서버 실행 확인 (`npm run dev`)
 - [x] **백오피스(Vue):** Vite 기반 개발 서버 실행 확인 (`npm run dev`)
 - [x] **연속성 도구:** `PROGRESS.md` 도입을 통한 업무 이관 체계 마련
+- [x] **설계 및 지침 문서:** `ARCHITECTURE.md`(전체 구조) 및 `GEMINI.md`(행동 지침) 생성 완료
 
 ## 🚧 진행 중 / 문제 해결
+- **설계 우선 원칙 적용:** 모든 기능 개발 전 `ARCHITECTURE.md` 참조 및 업데이트 프로세스 정착.
 - **Docker 실행 오류:** Docker Desktop 미구동으로 인한 접속 불가 현상 확인 -> Docker Desktop 실행 후 재시도 필요 안내 완료.
 - **기기 간 동기화:** 회사-집 간의 페르소나 및 진행 상황 공유 전략 수립 (Git 기반 `GEMINI.md` 및 `PROGRESS.md` 활용).
 
