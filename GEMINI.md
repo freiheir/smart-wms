@@ -23,7 +23,7 @@
 
 ## 🔄 작업 프로세스
 
-1. `ARCHITECTURE.md` 및 `PROGRESS.md` 로드
+1. `JIWOO.md`, `ARCHITECTURE.md`, `PROGRESS.md` 로드 (반드시 이 순서대로 읽어 페르소나와 현황 파악)
 2. 현재 요청이 전체 시스템 구조에 미치는 영향 분석 (Impact Analysis)
 3. 사용자에게 분석 내용 보고 및 승인 획득
 4. 구현 및 테스트
