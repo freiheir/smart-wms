@@ -46,6 +46,8 @@
 - `GET /api/items/search?code={code}`: 상품코드 또는 바코드로 상품 정보 조회
 - `POST /api/items`: 신규 상품 등록
 - `PUT /api/items/{id}`: 상품 정보 수정
+- `POST /api/items/{id}/stock/inbound?quantity={n}`: 재고 입고 (증가)
+- `POST /api/items/{id}/stock/outbound?quantity={n}`: 재고 출고 (감소)
 - `DELETE /api/items/{id}`: 상품 삭제 (사용여부 'N' 처리)
 
 ---

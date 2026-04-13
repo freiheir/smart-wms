@@ -41,4 +41,30 @@ public class Item extends BaseEntity {
     private String useYn = "Y";
 
     private String category;
+
+    /**
+     * 재고 입고 처리
+     */
+    public void receive(Integer quantity) {
+        if (quantity == null || quantity <= 0) {
+            throw new IllegalArgumentException("입고 수량은 0보다 커야 합니다.");
+        }
+        if (this.stockQuantity == null) {
+            this.stockQuantity = 0;
+        }
+        this.stockQuantity += quantity;
+    }
+
+    /**
+     * 재고 출고 처리
+     */
+    public void release(Integer quantity) {
+        if (quantity == null || quantity <= 0) {
+            throw new IllegalArgumentException("출고 수량은 0보다 커야 합니다.");
+        }
+        if (this.stockQuantity == null || this.stockQuantity < quantity) {
+            throw new IllegalStateException("재고가 부족합니다.");
+        }
+        this.stockQuantity -= quantity;
+    }
 }

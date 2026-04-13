@@ -58,6 +58,24 @@ public class ItemController {
     }
 
     /**
+     * 재고 입고 처리
+     */
+    @PostMapping("/{id}/stock/inbound")
+    public ResponseEntity<Void> receiveStock(@PathVariable Long id, @RequestParam Integer quantity) {
+        itemService.receiveStock(id, quantity);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 재고 출고 처리
+     */
+    @PostMapping("/{id}/stock/outbound")
+    public ResponseEntity<Void> releaseStock(@PathVariable Long id, @RequestParam Integer quantity) {
+        itemService.releaseStock(id, quantity);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
      * 상품 삭제 (사용여부 변경)
      */
     @DeleteMapping("/{id}")

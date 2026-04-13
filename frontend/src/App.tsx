@@ -143,11 +143,13 @@ const Inbound = () => {
   const [item, setItem] = useState<Item | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [quantity, setQuantity] = useState(1);
 
   const fetchItemInfo = async (code: string) => {
     setLoading(true);
     setError(null);
     setItem(null);
+    setQuantity(1);
     try {
       const response = await axios.get(`/api/items/search?code=${code}`);
       setItem(response.data);
@@ -164,13 +166,28 @@ const Inbound = () => {
     fetchItemInfo(code);
   };
 
+  const handleInboundSubmit = async () => {
+    if (!item) return;
+    try {
+      setLoading(true);
+      await axios.post(`/api/items/${item.id}/stock/inbound?quantity=${quantity}`);
+      alert(`${item.itemName} 상품 ${quantity}${item.itemUnit} 입고가 완료되었습니다.`);
+      // 재고 정보 갱신
+      fetchItemInfo(item.barcode || item.itemCode);
+    } catch (err: any) {
+      alert("입고 처리 중 오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="p-5 space-y-4">
       {isScanning && <BarcodeScanner onScan={handleScan} onClose={() => setIsScanning(false)} />}
       
       <div className="bg-white p-8 rounded-3xl border-2 border-dashed border-blue-200 flex flex-col items-center gap-4 min-h-[200px] justify-center text-center shadow-inner">
         {loading ? (
-          <div className="animate-pulse text-blue-500 font-bold">상품 정보를 조회하는 중...</div>
+          <div className="animate-pulse text-blue-500 font-bold">처리 중...</div>
         ) : scannedCode ? (
           item ? (
             <div className="w-full">
@@ -208,10 +225,19 @@ const Inbound = () => {
             <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full font-bold">현재고: {item.stockQuantity}</span>
           </div>
           <div className="flex items-center gap-4">
-            <input type="number" defaultValue="1" className="flex-1 text-center text-3xl font-black p-3 border-2 border-gray-100 rounded-2xl bg-gray-50 focus:border-blue-500 outline-none transition-colors" />
+            <input 
+              type="number" 
+              value={quantity} 
+              onChange={(e) => setQuantity(Number(e.target.value))}
+              className="flex-1 text-center text-3xl font-black p-3 border-2 border-gray-100 rounded-2xl bg-gray-50 focus:border-blue-500 outline-none transition-colors" 
+            />
             <span className="text-xl font-bold text-gray-600">{item.itemUnit}</span>
           </div>
-          <button className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold text-lg shadow-blue-200 shadow-lg active:scale-95 transition-transform">
+          <button 
+            onClick={handleInboundSubmit}
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold text-lg shadow-blue-200 shadow-lg active:scale-95 transition-transform disabled:bg-blue-300"
+          >
             입고 완료 처리
           </button>
         </div>
@@ -221,6 +247,116 @@ const Inbound = () => {
         <button className="w-full bg-gray-900 text-white py-4 rounded-2xl font-bold active:scale-95 transition-transform">
           현장에서 상품 신규 등록
         </button>
+      )}
+    </div>
+  );
+};
+
+// 📤 출고 관리
+const Outbound = () => {
+  const [isScanning, setIsScanning] = useState(false);
+  const [scannedCode, setScannedCode] = useState<string | null>(null);
+  const [item, setItem] = useState<Item | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+
+  const fetchItemInfo = async (code: string) => {
+    setLoading(true);
+    setError(null);
+    setItem(null);
+    setQuantity(1);
+    try {
+      const response = await axios.get(`/api/items/search?code=${code}`);
+      setItem(response.data);
+    } catch (err: any) {
+      setError("등록되지 않은 상품입니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleScan = (code: string) => {
+    setScannedCode(code);
+    setIsScanning(false);
+    fetchItemInfo(code);
+  };
+
+  const handleOutboundSubmit = async () => {
+    if (!item) return;
+    try {
+      setLoading(true);
+      await axios.post(`/api/items/${item.id}/stock/outbound?quantity=${quantity}`);
+      alert(`${item.itemName} 상품 ${quantity}${item.itemUnit} 출고가 완료되었습니다.`);
+      fetchItemInfo(item.barcode || item.itemCode);
+    } catch (err: any) {
+      const message = err.response?.data?.message || "출고 처리 중 오류가 발생했습니다. (재고 부족 등)";
+      alert(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="p-5 space-y-4">
+      {isScanning && <BarcodeScanner onScan={handleScan} onClose={() => setIsScanning(false)} />}
+      
+      <div className="bg-white p-8 rounded-3xl border-2 border-dashed border-green-200 flex flex-col items-center gap-4 min-h-[200px] justify-center text-center shadow-inner">
+        {loading ? (
+          <div className="animate-pulse text-green-500 font-bold">처리 중...</div>
+        ) : scannedCode ? (
+          item ? (
+            <div className="w-full">
+              <div className="bg-green-50 text-green-600 p-3 rounded-full inline-block mb-2"><CheckCircle2 size={32} /></div>
+              <p className="text-xs text-gray-400 font-bold tracking-widest uppercase">등록 상품</p>
+              <h3 className="text-xl font-black text-gray-900 mt-1">{item.itemName}</h3>
+              <p className="text-sm text-gray-500 mt-1">{item.itemCode} | {item.itemUnit}</p>
+            </div>
+          ) : (
+            <div className="w-full">
+              <div className="bg-red-50 text-red-500 p-3 rounded-full inline-block mb-2"><AlertCircle size={32} /></div>
+              <p className="text-xs text-red-400 font-bold tracking-widest uppercase">조회 실패</p>
+              <p className="text-lg font-bold text-red-600 mt-1">{error}</p>
+              <p className="text-xs text-gray-400 mt-1 break-all">코드: {scannedCode}</p>
+            </div>
+          )
+        ) : (
+          <>
+            <div className="bg-green-50 p-4 rounded-full text-green-500 mb-2">
+              <LogOut size={40} />
+            </div>
+            <p className="text-gray-500 font-medium text-sm">카메라를 사용하여<br/>출고할 바코드를 스캔하세요</p>
+          </>
+        )}
+      </div>
+
+      <button onClick={() => setIsScanning(true)} className="w-full bg-green-600 text-white py-4 rounded-2xl font-bold text-lg shadow-lg active:bg-green-700 flex items-center justify-center gap-2 transition-all">
+        <Search size={24} /> 바코드 스캔 시작
+      </button>
+
+      {item && (
+        <div className="bg-white p-5 rounded-3xl shadow-xl border border-green-50 space-y-4 animate-in slide-in-from-bottom-4 duration-300">
+          <div className="flex justify-between items-center border-b pb-3">
+            <span className="text-xs font-black text-gray-400 uppercase">출고 수량 입력</span>
+            <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full font-bold">현재고: {item.stockQuantity}</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <input 
+              type="number" 
+              value={quantity} 
+              onChange={(e) => setQuantity(Number(e.target.value))}
+              className="flex-1 text-center text-3xl font-black p-3 border-2 border-gray-100 rounded-2xl bg-gray-50 focus:border-green-500 outline-none transition-colors" 
+            />
+            <span className="text-xl font-bold text-gray-600">{item.itemUnit}</span>
+          </div>
+          <button 
+            onClick={handleOutboundSubmit}
+            disabled={loading}
+            className="w-full bg-green-600 text-white py-4 rounded-2xl font-bold text-lg shadow-green-200 shadow-lg active:scale-95 transition-transform disabled:bg-green-300"
+          >
+            출고 완료 처리
+          </button>
+        </div>
       )}
     </div>
   );
@@ -264,7 +400,7 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/inbound" element={<Inbound />} />
-          <Route path="/outbound" element={<div className="p-10 text-center text-gray-400">준비 중</div>} />
+          <Route path="/outbound" element={<Outbound />} />
           <Route path="/stock" element={<div className="p-10 text-center text-gray-400">준비 중</div>} />
           <Route path="/item" element={<div className="p-10 text-center text-gray-400">준비 중</div>} />
         </Routes>

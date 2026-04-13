@@ -85,6 +85,26 @@ public class ItemService {
     }
 
     /**
+     * 재고 입고 처리
+     */
+    @Transactional
+    public void receiveStock(Long id, Integer quantity) {
+        Item item = itemRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 상품입니다."));
+        item.receive(quantity);
+    }
+
+    /**
+     * 재고 출고 처리
+     */
+    @Transactional
+    public void releaseStock(Long id, Integer quantity) {
+        Item item = itemRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 상품입니다."));
+        item.release(quantity);
+    }
+
+    /**
      * 상품 삭제 (사용여부 N 처리)
      */
     @Transactional
