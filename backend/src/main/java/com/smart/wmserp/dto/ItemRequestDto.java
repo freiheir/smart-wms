@@ -1,20 +1,22 @@
 package com.smart.wmserp.dto;
 
 import lombok.*;
+import java.math.BigDecimal;
 
-@Getter
-@Setter
+@Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class ItemRequestDto {
-    private String itemCode;
+    private String partNumber;
+    private String rawPartNumber;
     private String itemName;
-    private String description;
-    private Integer price;
-    private Integer stockQuantity;
-    private String itemUnit;
-    private String barcode;
+    private BigDecimal wholesalePrice;
+    private BigDecimal multiplier;
+    private BigDecimal weightKg;
+    private BigDecimal cbm;
+    private String currency;
+    private Long partnerId;
     private String useYn;
-    private String category;
+    private Integer safetyStock;
 }

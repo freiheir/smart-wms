@@ -1,9 +1,11 @@
 package com.smart.wmserp.service;
 
-import com.smart.wmserp.domain.Item;
+import com.smart.wmserp.domain.master.Item;
+import com.smart.wmserp.domain.master.Partner;
 import com.smart.wmserp.dto.ItemRequestDto;
 import com.smart.wmserp.dto.ItemResponseDto;
 import com.smart.wmserp.repository.ItemRepository;
+import com.smart.wmserp.repository.PartnerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,22 +19,30 @@ import java.util.stream.Collectors;
 public class ItemService {
 
     private final ItemRepository itemRepository;
+    private final PartnerRepository partnerRepository;
 
     /**
      * 상품 등록
      */
     @Transactional
     public Long createItem(ItemRequestDto requestDto) {
+        Partner partner = null;
+        if (requestDto.getPartnerId() != null) {
+            partner = partnerRepository.findById(requestDto.getPartnerId())
+                    .orElse(null);
+        }
+
         Item item = Item.builder()
-                .itemCode(requestDto.getItemCode())
+                .rawPartNumber(requestDto.getRawPartNumber())
                 .itemName(requestDto.getItemName())
-                .description(requestDto.getDescription())
-                .price(requestDto.getPrice())
-                .stockQuantity(requestDto.getStockQuantity())
-                .itemUnit(requestDto.getItemUnit())
-                .barcode(requestDto.getBarcode())
+                .wholesalePrice(requestDto.getWholesalePrice())
+                .multiplier(requestDto.getMultiplier())
+                .weightKg(requestDto.getWeightKg())
+                .cbm(requestDto.getCbm())
+                .currency(requestDto.getCurrency())
+                .partner(partner)
                 .useYn(requestDto.getUseYn() != null ? requestDto.getUseYn() : "Y")
-                .category(requestDto.getCategory())
+                .safetyStock(requestDto.getSafetyStock())
                 .build();
         return itemRepository.save(item).getId();
     }
@@ -45,25 +55,24 @@ public class ItemService {
         Item item = itemRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 상품입니다."));
         
+        item.setRawPartNumber(requestDto.getRawPartNumber());
         item.setItemName(requestDto.getItemName());
-        item.setDescription(requestDto.getDescription());
-        item.setPrice(requestDto.getPrice());
-        item.setStockQuantity(requestDto.getStockQuantity());
-        item.setItemUnit(requestDto.getItemUnit());
-        item.setBarcode(requestDto.getBarcode());
+        item.setWholesalePrice(requestDto.getWholesalePrice());
+        item.setMultiplier(requestDto.getMultiplier());
+        item.setWeightKg(requestDto.getWeightKg());
+        item.setCbm(requestDto.getCbm());
+        item.setCurrency(requestDto.getCurrency());
         item.setUseYn(requestDto.getUseYn());
-        item.setCategory(requestDto.getCategory());
-        // itemCode는 일반적으로 변경하지 않음 (식별자 역할)
+        item.setSafetyStock(requestDto.getSafetyStock());
     }
 
     /**
-     * 상품코드 또는 바코드로 상품 조회
+     * 품번으로 상품 조회
      */
-    public ItemResponseDto findByCodeOrBarcode(String code) {
-        return itemRepository.findByItemCode(code)
-                .or(() -> itemRepository.findByBarcode(code))
+    public ItemResponseDto findByPartNumber(String partNumber) {
+        return itemRepository.findByPartNumber(partNumber)
                 .map(ItemResponseDto::new)
-                .orElseThrow(() -> new IllegalArgumentException("등록되지 않은 상품입니다. (코드: " + code + ")"));
+                .orElseThrow(() -> new IllegalArgumentException("등록되지 않은 상품입니다. (품번: " + partNumber + ")"));
     }
 
     /**
@@ -82,26 +91,6 @@ public class ItemService {
         Item item = itemRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 상품입니다."));
         return new ItemResponseDto(item);
-    }
-
-    /**
-     * 재고 입고 처리
-     */
-    @Transactional
-    public void receiveStock(Long id, Integer quantity) {
-        Item item = itemRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 상품입니다."));
-        item.receive(quantity);
-    }
-
-    /**
-     * 재고 출고 처리
-     */
-    @Transactional
-    public void releaseStock(Long id, Integer quantity) {
-        Item item = itemRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 상품입니다."));
-        item.release(quantity);
     }
 
     /**

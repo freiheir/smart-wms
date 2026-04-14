@@ -4,31 +4,33 @@ import axios from 'axios'
 
 interface Item {
   id?: number
-  itemCode: string
+  partNumber: string
+  rawPartNumber: string
   itemName: string
-  description: string
-  price: number
-  stockQuantity: number
-  itemUnit: string
-  barcode: string
+  wholesalePrice: number
+  multiplier: number
+  weightKg: number
+  cbm: number
+  currency: string
   useYn: string
-  category: string
+  safetyStock: number
+  partnerName?: string
   createdAt?: string
 }
 
 const items = ref<Item[]>([])
 const showModal = ref(false)
 const isEdit = ref(false)
-const currentItem = ref<Item>({
-  itemCode: '',
+const currentItem = ref<Partial<Item>>({
+  rawPartNumber: '',
   itemName: '',
-  description: '',
-  price: 0,
-  stockQuantity: 0,
-  itemUnit: 'EA',
-  barcode: '',
+  wholesalePrice: 0,
+  multiplier: 1.0,
+  weightKg: 0,
+  cbm: 0,
+  currency: 'USD',
   useYn: 'Y',
-  category: ''
+  safetyStock: 0
 })
 
 const API_URL = '/api/items'
@@ -36,41 +38,37 @@ const API_URL = '/api/items'
 // 목록 조회
 const fetchItems = async () => {
   try {
-    console.log('상품 목록 조회 시도: ', API_URL)
     const response = await axios.get(API_URL)
-    console.log('응답 데이터: ', response.data)
     items.value = response.data
   } catch (error: any) {
-    console.error('상품 목록 조회 실패 상세:', error)
-    if (error.response) {
-      console.error('서버 응답 에러:', error.response.status, error.response.data)
-    } else if (error.request) {
-      console.error('요청 전송됨, 응답 없음 (네트워크 오류 등):', error.request)
-    } else {
-      console.error('요청 설정 오류:', error.message)
-    }
-    alert(`데이터를 불러오는데 실패했습니다. (오류: ${error.message})`)
+    console.error('목록 조회 실패:', error)
+    alert('데이터를 불러오는데 실패했습니다.')
   }
 }
 
-// 등록 모달 열기
-const openAddModal = () => {
-  isEdit.value = false
-  currentItem.value = {
-    itemCode: '',
-    itemName: '',
-    description: '',
-    price: 0,
-    stockQuantity: 0,
-    itemUnit: 'EA',
-    barcode: '',
-    useYn: 'Y',
-    category: ''
+// 등록/수정 모달 열기
+const openModal = (item?: Item) => {
+  if (item) {
+    isEdit.value = true
+    currentItem.value = { ...item }
+  } else {
+    isEdit.value = false
+    currentItem.value = {
+      rawPartNumber: '',
+      itemName: '',
+      wholesalePrice: 0,
+      multiplier: 1.0,
+      weightKg: 0,
+      cbm: 0,
+      currency: 'USD',
+      useYn: 'Y',
+      safetyStock: 0
+    }
   }
   showModal.value = true
 }
 
-// 저장 (등록/수정)
+// 저장
 const saveItem = async () => {
   try {
     if (isEdit.value && currentItem.value.id) {
@@ -82,7 +80,7 @@ const saveItem = async () => {
     fetchItems()
   } catch (error) {
     console.error('저장 실패:', error)
-    alert('저장에 실패했습니다. 코드가 중복되는지 확인해 주세요.')
+    alert('저장에 실패했습니다. 품번 중복 여부를 확인하세요.')
   }
 }
 
@@ -92,83 +90,87 @@ onMounted(fetchItems)
 <template>
   <div class="item-management">
     <div class="header-actions">
-      <h2>📦 상품 목록 관리</h2>
-      <button @click="openAddModal" class="btn-primary">신규 상품 등록</button>
+      <h2>📦 품목 마스터 관리 (ERP)</h2>
+      <button @click="openModal()" class="btn-primary">신규 품목 등록</button>
     </div>
 
-    <!-- 상품 테이블 -->
     <div class="table-container">
       <table class="item-table">
         <thead>
           <tr>
-            <th>코드</th>
-            <th>상품명</th>
-            <th>단위</th>
-            <th>단가</th>
-            <th>재고</th>
-            <th>카테고리</th>
-            <th>사용여부</th>
-            <th>등록일</th>
+            <th>정제 품번</th>
+            <th>원시 품번</th>
+            <th>품명</th>
+            <th>통화</th>
+            <th>도매가</th>
+            <th>배수</th>
+            <th>안전재고</th>
+            <th>사용</th>
+            <th>관리</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="item in items" :key="item.id">
-            <td>{{ item.itemCode }}</td>
+            <td><code>{{ item.partNumber }}</code></td>
+            <td>{{ item.rawPartNumber }}</td>
             <td class="text-left">{{ item.itemName }}</td>
-            <td>{{ item.itemUnit }}</td>
-            <td class="text-right">{{ item.price.toLocaleString() }}</td>
-            <td class="text-right">{{ item.stockQuantity.toLocaleString() }}</td>
-            <td>{{ item.category }}</td>
+            <td>{{ item.currency }}</td>
+            <td class="text-right">{{ item.wholesalePrice.toLocaleString() }}</td>
+            <td>{{ item.multiplier }}</td>
+            <td>{{ item.safetyStock }}</td>
             <td>
               <span :class="['badge', item.useYn === 'Y' ? 'bg-success' : 'bg-danger']">
-                {{ item.useYn === 'Y' ? '사용' : '중지' }}
+                {{ item.useYn === 'Y' ? 'Y' : 'N' }}
               </span>
             </td>
-            <td>{{ item.createdAt?.substring(0, 10) }}</td>
-          </tr>
-          <tr v-if="items.length === 0">
-            <td colspan="8" class="empty-msg">등록된 상품이 없습니다.</td>
+            <td>
+              <button @click="openModal(item)" class="btn-sm">수정</button>
+            </td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <!-- 등록/수정 모달 (심플 구현) -->
+    <!-- 등록/수정 모달 -->
     <div v-if="showModal" class="modal-overlay">
       <div class="modal-content">
-        <h3>{{ isEdit ? '상품 수정' : '신규 상품 등록' }}</h3>
+        <h3>{{ isEdit ? '품목 수정' : '신규 품목 등록' }}</h3>
         <div class="form-grid">
           <div class="form-group">
-            <label>상품 코드</label>
-            <input v-model="currentItem.itemCode" placeholder="SKU-001" :disabled="isEdit">
+            <label>원시 품번 (Raw Part No)</label>
+            <input v-model="currentItem.rawPartNumber" placeholder="예: SKU-001-E">
           </div>
           <div class="form-group">
-            <label>상품명</label>
-            <input v-model="currentItem.itemName" placeholder="상품명을 입력하세요">
+            <label>품명 (Item Name)</label>
+            <input v-model="currentItem.itemName">
           </div>
           <div class="form-group">
-            <label>단위</label>
-            <select v-model="currentItem.itemUnit">
-              <option value="EA">EA (개)</option>
-              <option value="BOX">BOX (박스)</option>
-              <option value="PLT">PLT (파렛트)</option>
+            <label>통화 (Currency)</label>
+            <select v-model="currentItem.currency">
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="KRW">KRW</option>
             </select>
           </div>
           <div class="form-group">
-            <label>단가</label>
-            <input type="number" v-model="currentItem.price">
+            <label>도매가 (Wholesale Price)</label>
+            <input type="number" v-model="currentItem.wholesalePrice">
           </div>
           <div class="form-group">
-            <label>초기 재고</label>
-            <input type="number" v-model="currentItem.stockQuantity">
+            <label>판매가 배수 (Multiplier)</label>
+            <input type="number" step="0.1" v-model="currentItem.multiplier">
           </div>
           <div class="form-group">
-            <label>카테고리</label>
-            <input v-model="currentItem.category" placeholder="식품, 잡화 등">
+            <label>안전 재고 (Safety Stock)</label>
+            <input type="number" v-model="currentItem.safetyStock">
           </div>
-          <div class="form-group full-width">
-            <label>설명</label>
-            <textarea v-model="currentItem.description"></textarea>
+          <div class="form-group">
+            <label>중량 (kg)</label>
+            <input type="number" step="0.01" v-model="currentItem.weightKg">
+          </div>
+          <div class="form-group">
+            <label>부피 (CBM)</label>
+            <input type="number" step="0.0001" v-model="currentItem.cbm">
           </div>
         </div>
         <div class="modal-actions">
@@ -181,110 +183,24 @@ onMounted(fetchItems)
 </template>
 
 <style scoped>
-.header-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 25px;
-}
-
-.btn-primary {
-  background-color: #3498db;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.btn-secondary {
-  background-color: #95a5a6;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-/* 테이블 스타일 */
-.table-container {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-  overflow: hidden;
-}
-
-.item-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.item-table th, .item-table td {
-  padding: 15px;
-  text-align: center;
-  border-bottom: 1px solid #ecf0f1;
-}
-
-.item-table th {
-  background-color: #f8f9fa;
-  font-weight: bold;
-  color: #7f8c8d;
-}
-
+.header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.btn-primary { background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+.btn-secondary { background: #95a5a6; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+.btn-sm { padding: 4px 8px; font-size: 0.8rem; cursor: pointer; }
+.table-container { background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.item-table { width: 100%; border-collapse: collapse; }
+.item-table th, .item-table td { padding: 12px; border-bottom: 1px solid #eee; text-align: center; }
 .text-left { text-align: left; }
 .text-right { text-align: right; }
-
-.badge {
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  color: white;
-}
-.bg-success { background-color: #2ecc71; }
-.bg-danger { background-color: #e74c3c; }
-
-/* 모달 스타일 */
-.modal-overlay {
-  position: fixed;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.5);
-  display: flex; justify-content: center; align-items: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  padding: 30px;
-  border-radius: 10px;
-  width: 600px;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-top: 20px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-}
-
-.full-width { grid-column: span 2; }
-
-label { font-weight: bold; margin-bottom: 5px; font-size: 0.9rem; }
-input, select, textarea {
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-.modal-actions {
-  margin-top: 30px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
+code { background: #f4f4f4; padding: 2px 4px; border-radius: 4px; color: #e74c3c; }
+.badge { padding: 2px 6px; border-radius: 4px; color: white; font-size: 0.8rem; }
+.bg-success { background: #2ecc71; }
+.bg-danger { background: #e74c3c; }
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; }
+.modal-content { background: white; padding: 30px; border-radius: 8px; width: 650px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+.form-group { display: flex; flex-direction: column; }
+label { font-size: 0.85rem; margin-bottom: 5px; font-weight: bold; }
+input, select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+.modal-actions { margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; }
 </style>

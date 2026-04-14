@@ -9,14 +9,26 @@ const route = useRoute()
     <!-- 사이드바 메뉴 -->
     <aside class="sidebar">
       <div class="logo">
-        <h2>Smart WMS BO</h2>
+        <h2>Smart ERP BO</h2>
       </div>
       <nav class="menu">
+        <router-link to="/dashboard" class="menu-item" active-class="active">
+          <span class="icon">📊</span> 대시보드
+        </router-link>
+        <router-link to="/sales/offers" class="menu-item" active-class="active">
+          <span class="icon">💼</span> 영업 관리
+        </router-link>
+        <router-link to="/wms/inbound" class="menu-item" active-class="active">
+          <span class="icon">📥</span> 입고 관리
+        </router-link>
         <router-link to="/items" class="menu-item" active-class="active">
           <span class="icon">📦</span> 상품 관리
         </router-link>
+        <router-link to="/partners" class="menu-item" active-class="active">
+          <span class="icon">🤝</span> 거래처 관리
+        </router-link>
         <router-link to="/stock-status" class="menu-item" active-class="active">
-          <span class="icon">🚚</span> 입출고 현황
+          <span class="icon">🚚</span> 재고 현황
         </router-link>
       </nav>
     </aside>

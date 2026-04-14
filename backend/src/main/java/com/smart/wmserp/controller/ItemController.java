@@ -25,11 +25,11 @@ public class ItemController {
     }
 
     /**
-     * 바코드 또는 상품코드로 상품 조회
+     * 품번으로 상품 조회
      */
     @GetMapping("/search")
-    public ResponseEntity<ItemResponseDto> searchItem(@RequestParam String code) {
-        return ResponseEntity.ok(itemService.findByCodeOrBarcode(code));
+    public ResponseEntity<ItemResponseDto> searchItem(@RequestParam String partNumber) {
+        return ResponseEntity.ok(itemService.findByPartNumber(partNumber));
     }
 
     /**
@@ -54,24 +54,6 @@ public class ItemController {
     @PutMapping("/{id}")
     public ResponseEntity<Void> updateItem(@PathVariable Long id, @RequestBody ItemRequestDto requestDto) {
         itemService.updateItem(id, requestDto);
-        return ResponseEntity.ok().build();
-    }
-
-    /**
-     * 재고 입고 처리
-     */
-    @PostMapping("/{id}/stock/inbound")
-    public ResponseEntity<Void> receiveStock(@PathVariable Long id, @RequestParam Integer quantity) {
-        itemService.receiveStock(id, quantity);
-        return ResponseEntity.ok().build();
-    }
-
-    /**
-     * 재고 출고 처리
-     */
-    @PostMapping("/{id}/stock/outbound")
-    public ResponseEntity<Void> releaseStock(@PathVariable Long id, @RequestParam Integer quantity) {
-        itemService.releaseStock(id, quantity);
         return ResponseEntity.ok().build();
     }
 

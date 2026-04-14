@@ -1,11 +1,12 @@
 package com.smart.wmserp.config;
 
-import com.smart.wmserp.domain.Item;
+import com.smart.wmserp.domain.master.Item;
 import com.smart.wmserp.repository.ItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import java.math.BigDecimal;
 
 @Configuration
 @RequiredArgsConstructor
@@ -18,13 +19,14 @@ public class DataInitializer {
         return args -> {
             if (itemRepository.count() == 0) {
                 Item sampleItem = Item.builder()
-                        .itemCode("ITEM-001")
+                        .partNumber("SKU001")
+                        .rawPartNumber("SKU-001")
                         .itemName("테스트 품목")
-                        .itemUnit("EA")
-                        .description("WMS/ERP 연동 테스트용 품목입니다.")
-                        .price(10000)
-                        .stockQuantity(100)
+                        .wholesalePrice(new BigDecimal("100.00"))
+                        .multiplier(new BigDecimal("1.2"))
+                        .currency("USD")
                         .useYn("Y")
+                        .safetyStock(10)
                         .build();
 
                 itemRepository.save(sampleItem);
