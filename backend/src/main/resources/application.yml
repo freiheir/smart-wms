@@ -16,3 +16,5 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   jackson:
     time-zone: Asia/Seoul
+    serialization:
+      fail-on-empty-beans: false

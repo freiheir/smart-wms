@@ -1,0 +1,4 @@
+Part No,Quantity,Reference Price,Manager Email,Buyer Item Name,Remarks,Partner Code
+SKU-001,20,110.00,buyer_manager@example.com,Cool Wireless Mouse,Express Shipping please!,BUY001
+NON-EXIST-001,100,0,buyer_manager@example.com,Unknown Gadget,Need manual,BUY001
+SKU-001,50,105.00,buyer_manager@example.com,Cool Wireless Mouse,Standard pack,BUY001

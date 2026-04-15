@@ -1,0 +1,4 @@
+Part No,Quantity,Reference Price,Manager Email,Buyer Item Name,Remarks
+SKU-001,20,110,buyer_manager@example.com,Cool Wireless Mouse,Express Shipping please!
+NON-EXIST-001,100,0,buyer_manager@example.com,Unknown Gadget,Need manual
+SKU-001,50,105,buyer_manager@example.com,Cool Wireless Mouse,Standard pack

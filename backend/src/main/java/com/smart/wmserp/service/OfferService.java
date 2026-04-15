@@ -21,6 +21,25 @@ public class OfferService {
     private final ItemRepository itemRepository;
     private final PricingService pricingService;
 
+    @Transactional
+    public Offer createOffer(Offer offer) {
+        // 총액 계산
+        BigDecimal total = offer.getItems().stream()
+                .map(i -> i.getUnitPrice().multiply(new BigDecimal(i.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        offer.setTotalAmount(total);
+
+        // 인콰이어리 번호 자동 생성 (예: INQ-20260415-001)
+        long currentCount = offerRepository.count();
+        String inquiryNo = "INQ-" + java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd").format(java.time.LocalDateTime.now()) 
+                         + "-" + String.format("%03d", currentCount + 1);
+        offer.setInquiryNo(inquiryNo);
+
+        Offer savedOffer = offerRepository.save(offer);
+        System.out.println(">>> Offer saved successfully: " + savedOffer.getInquiryNo());
+        return savedOffer;
+    }
+
     /**
      * Offer 등록 (품번 자동 정제 및 가격 자동 산출)
      */

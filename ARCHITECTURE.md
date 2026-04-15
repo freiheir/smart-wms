@@ -13,54 +13,64 @@
 
 ---
 
-## 📂 2. Backend Layering Pattern
-- **`domain`:** JPA 엔티티 및 비즈니스 도메인 모델. 핵심 비즈니스 로직은 가능한 엔티티 내부에 구현.
-- **`repository`:** Spring Data JPA를 통한 데이터 접근 계층.
-- **`service`:** 트랜잭션 경계 설정 및 여러 도메인 서비스 간의 조율.
-- **`controller`:** REST API 엔드포인트. DTO 변환 및 API 명세 관리.
-- **`config`:** 보안, CORS, 데이터 초기화 등 설정 클래스.
+## 📂 2. Backend Layering & Package Structure
+기존 레이어드 패턴을 유지하되, 업무 도메인별로 패키지를 세분화하여 관리합니다.
+
+- **`com.smart.wmserp.domain`:**
+    - `master`: 상품(Item), 거래처(Partner), 환율(ExchangeRate) 등 기초 마스터 정보
+    - `sales`: 인콰이어리 및 오퍼(Offer), 오퍼 품목(OfferItem)
+    - `purchase`: 발주서(PurchaseOrder), 발주 품목(PurchaseOrderItem)
+    - `wms`: 입고예정(InboundExpected), 재고(Stock), 재고로트(StockLot), 출고피킹(PickingList)
+- **`com.smart.wmserp.service`:** 도메인 간 조율 및 복합 비즈니스 로직 (Pricing, Outbound FIFO 등)
+- **`com.smart.wmserp.api`:** REST API 엔드포인트 및 외부 연동 컨트롤러
 
 ---
 
 ## 📊 3. Data Model (Entity Relationship)
 
-### [Item] - 상품 마스터
-- `id` (Long, PK): 자동 생성 아이디
-- `itemCode` (String, Unique): 상품 식별 코드 (예: SKU-001)
-- `itemName` (String): 상품명
-- `description` (String): 상세 설명
-- `price` (Integer): 단가
-- `stockQuantity` (Integer): **[핵심]** 현재 가용 재고 수량
-- `itemUnit` (String, Not Null): 상품 단위 (EA, BOX, PLT 등)
-- `barcode` (String, Unique): 상품 바코드
-- `useYn` (String, Default 'Y'): 사용 여부
-- `category` (String): 상품 카테고리
-- `createdAt` (LocalDateTime): 생성 일시 (Auditing)
-- `updatedAt` (LocalDateTime): 수정 일시 (Auditing)
+### [Master Data]
+- **Item (상품):** SKU 관리, 바코드, 단위, 카테고리 정보
+- **Partner (거래처):** 매출처/매입처 구분, 통화(Currency), 결제 조건 관리
+- **ExchangeRate (환율):** 일자별/통화별 환율 정보
+
+### [Sales & Purchase]
+- **Offer (오퍼):** 인콰이어리 번호 기반 관리, 상태(INQUIRY -> OFFER -> PI_CONVERTED), **담당자 이메일(`managerEmail`)**, **전체 비고(`remarks`)**
+- **PurchaseOrder (발주):** P/I 기반 자동 생성, Vendor 매칭, 입고 예정 정보와 연결
+
+### [WMS & Inventory]
+- **Stock (현재고):** 상품별 실시간 가용 재고 합계
+- **StockLot (재고로트):** **[핵심]** 입고 일자별 로트 관리 (FIFO 출고의 기반)
+- **InboundExpected (입고예정):** 발주 기반 입고 대기 정보
+- **OfferItem (오퍼 품목):** **바이어 품목명(`buyerItemName`)**, **품목별 비고(`lineRemarks`)** 포함
 
 ---
 
 ## 📡 4. Core API Specification
-### [Items]
-- `GET /api/items`: 상품 전체 목록 조회
-- `GET /api/items/search?code={code}`: 상품코드 또는 바코드로 상품 정보 조회
-- `POST /api/items`: 신규 상품 등록
-- `PUT /api/items/{id}`: 상품 정보 수정
-- `POST /api/items/{id}/stock/inbound?quantity={n}`: 재고 입고 (증가)
-- `POST /api/items/{id}/stock/outbound?quantity={n}`: 재고 출고 (감소)
-- `DELETE /api/items/{id}`: 상품 삭제 (사용여부 'N' 처리)
+
+### [Sales / Offer Management]
+- `POST /api/sales/offers/upload-excel`: 인콰이어리 엑셀 대량 업로드
+- `POST /api/sales/offers/{id}/convert-to-pi`: 오퍼를 P/I(Proforma Invoice)로 확정
+- `POST /api/sales/offers/{id}/generate-po`: P/I 기반 발주서 자동 생성 및 WMS 연동
+
+### [WMS / Inventory Management]
+- `GET /api/wms/inbound/expected`: 입고 대기 목록 조회
+- `POST /api/wms/inbound/confirm`: 입고 확정 처리 (실제 재고 및 로트 생성)
+- `POST /api/wms/stock/adjust`: 재고 실사 조정 (사유 포함)
+- `GET /api/items/search?code={code}`: 바코드/품번 기반 상품 검색
 
 ---
 
 ## 📏 5. Core Business Rules (Immutable)
-1. **재고 정합성:** `stockQuantity`는 어떠한 경우에도 물리적인 입출고 내역 없이 직접 수정해서는 안 됨 (추후 트랜잭션 로그 기반 관리).
-2. **코드 체계:** 모든 마스터 데이터(상품, 로케이션 등)는 고유한 식별 코드(`code`)를 가져야 하며, 이는 사람이 읽을 수 있는 형식이어야 함.
-3. **확장성:** 모든 테이블은 등록일시(`createdAt`), 수정일시(`updatedAt`)를 포함하는 공통 감시(Audit) 필드를 고려함.
+1. **FIFO (선입선출):** 모든 출고 할당은 `StockLot`의 입고 일시가 빠른 순서대로 자동 할당됨.
+2. **재고 정합성:** `Stock` 수량은 반드시 `StockHistory`와 일치해야 하며, 물리적 트랜잭션 없이 수정 불가.
+3. **통화 관리:** 모든 매입/매출 전표는 마스터에 정의된 거래처별 기본 통화를 따르며, 환율 서비스에 의해 원화 환산 처리됨.
+4. **코드 자동화:** 품번(Part Number)은 대문자 및 특수문자 제거 규칙(`PartNumberUtil`)을 통해 정규화되어 관리됨.
 
 ---
 
 ## 🛠️ 6. Implementation Workflow
-1. **분석:** 새로운 기능을 추가하기 전, 기존 도메인 모델과의 연관성을 확인한다.
-2. **설계:** `ARCHITECTURE.md`에 새로운 테이블이나 로직을 업데이트한다.
-3. **구현:** 설계된 내용을 바탕으로 코드를 작성한다.
-4. **검증:** 전체 데이터 정합성이 깨지지 않았는지 테스트한다.
+1. `ARCHITECTURE.md` 및 `PROGRESS.md` 로드하여 시스템 구조와 현황 파악
+2. 도메인 모델(Entity) 설계 및 DB 스키마 반영
+3. 비즈니스 로직(Service) 구현 및 단위 테스트
+4. API(Controller) 노출 및 프론트엔드 연동
+5. 검증 후 문서 최신화

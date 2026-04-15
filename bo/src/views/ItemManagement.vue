@@ -4,7 +4,7 @@ import axios from 'axios'
 
 interface Item {
   id?: number
-  partNumber: string
+  partNumber?: string
   rawPartNumber: string
   itemName: string
   wholesalePrice: number
@@ -21,7 +21,7 @@ interface Item {
 const items = ref<Item[]>([])
 const showModal = ref(false)
 const isEdit = ref(false)
-const currentItem = ref<Partial<Item>>({
+const currentItem = ref<Item>({
   rawPartNumber: '',
   itemName: '',
   wholesalePrice: 0,

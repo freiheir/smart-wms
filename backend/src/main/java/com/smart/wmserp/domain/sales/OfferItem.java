@@ -17,6 +17,7 @@ public class OfferItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @com.fasterxml.jackson.annotation.JsonBackReference
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "offer_id")
     private Offer offer;
@@ -33,6 +34,12 @@ public class OfferItem {
 
     @Column(name = "margin_rate", precision = 10, scale = 2)
     private BigDecimal marginRate;
+
+    @Column(name = "buyer_item_name")
+    private String buyerItemName;
+
+    @Column(name = "line_remarks", length = 1000)
+    private String lineRemarks;
 
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();

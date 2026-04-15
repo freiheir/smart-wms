@@ -35,7 +35,8 @@ public class OfferController {
      */
     @GetMapping
     public ResponseEntity<List<Offer>> getOffers() {
-        return ResponseEntity.ok(offerRepository.findAll());
+        List<Offer> offers = offerRepository.findAllWithPartner();
+        return ResponseEntity.ok(offers);
     }
 
     /**

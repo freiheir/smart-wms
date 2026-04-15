@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 public class ItemResponseDto {
     private Long id;
     private String partNumber;
+    private String rawPartNumber;
     private String itemName;
     private BigDecimal wholesalePrice;
     private BigDecimal multiplier;
@@ -24,6 +25,7 @@ public class ItemResponseDto {
     public ItemResponseDto(Item item) {
         this.id = item.getId();
         this.partNumber = item.getPartNumber();
+        this.rawPartNumber = item.getRawPartNumber();
         this.itemName = item.getItemName();
         this.wholesalePrice = item.getWholesalePrice();
         this.multiplier = item.getMultiplier();

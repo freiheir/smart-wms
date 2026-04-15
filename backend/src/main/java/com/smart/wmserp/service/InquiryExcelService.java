@@ -48,9 +48,13 @@ public class InquiryExcelService {
                 if (row == null) continue;
 
                 try {
-                    // 컬럼 매핑: 0:품번, 1:수량, 2:바이어단가(옵션)
+                    // 컬럼 매핑: 0:품번, 1:수량, 2:바이어단가, 3:이메일, 4:바이어품명, 5:비고, 6:거래처코드
                     String rawPartNumber = getCellValueAsString(row.getCell(0));
                     int quantity = (int) row.getCell(1).getNumericCellValue();
+                    String managerEmail = getCellValueAsString(row.getCell(3));
+                    String buyerItemName = getCellValueAsString(row.getCell(4));
+                    String lineRemarks = getCellValueAsString(row.getCell(5));
+                    String excelPartnerCode = getCellValueAsString(row.getCell(6));
                     
                     // 1. 품번 정제
                     String cleanPartNumber = PartNumberUtil.clean(rawPartNumber);
@@ -83,7 +87,14 @@ public class InquiryExcelService {
                             .quantity(quantity)
                             .unitPrice(calculatedPrice)
                             .marginRate(pricingService.calculateMarginRate(calculatedPrice, item.getWholesalePrice()))
+                            .buyerItemName(buyerItemName)
+                            .lineRemarks(lineRemarks)
                             .build());
+
+                    // 거래처 코드 검증 (선택된 거래처와 엑셀 내 거래처가 일치하는지 확인)
+                    if (!excelPartnerCode.isEmpty() && !excelPartnerCode.equals(partner.getPartnerCode())) {
+                        // 일치하지 않을 때 경고를 주거나 처리할 수 있음
+                    }
 
                 } catch (Exception e) {
                     errors.add(InquiryUploadResponse.InquiryErrorDetail.builder()
@@ -93,23 +104,29 @@ public class InquiryExcelService {
                 }
             }
 
-            // 모든 행이 정상이 아니어도 일부 성공한 것만 Offer로 생성하거나,
-            // 전체 성공 시에만 생성하게 할 수 있습니다. (여기선 에러 리포트 반환에 집중)
-            if (errors.isEmpty() && !validItems.isEmpty()) {
+            // 에러가 있어도 성공한 품목이 있으면 Offer 생성 (부분 성공 허용)
+            if (!validItems.isEmpty()) {
+                // 첫 번째 행의 데이터를 헤더 정보로 활용
+                Row firstDataRow = sheet.getRow(1);
+                String managerEmail = getCellValueAsString(firstDataRow.getCell(3));
+                String totalRemarks = getCellValueAsString(firstDataRow.getCell(5));
+
                 Offer offer = Offer.builder()
                         .partner(partner)
                         .status("INQUIRY")
                         .currency(partner.getCurrency())
+                        .managerEmail(managerEmail)
+                        .remarks(totalRemarks)
                         .build();
                 
-                // OfferItem 연동 및 저장 로직 (OfferService 활용)
-                // ... 생략 (실제 저장 로직)
+                // OfferItem 연동
+                for (OfferItem oi : validItems) {
+                    offer.addItem(oi);
+                }
                 
-                return InquiryUploadResponse.builder()
-                        .successCount(validItems.size())
-                        .failureCount(errors.size())
-                        .errors(errors)
-                        .build();
+                // OfferService를 통해 실제 저장 (오퍼 번호 생성 등)
+                Offer saved = offerService.createOffer(offer);
+                System.out.println(">>> Inquiry Upload - Saved Offer ID: " + saved.getId());
             }
 
         } catch (Exception e) {

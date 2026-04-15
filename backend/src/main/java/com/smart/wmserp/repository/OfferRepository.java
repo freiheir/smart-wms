@@ -8,6 +8,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface OfferRepository extends JpaRepository<Offer, Long> {
+    @Query("SELECT o FROM Offer o LEFT JOIN FETCH o.partner")
+    List<Offer> findAllWithPartner();
+
     long countByStatus(String status);
     long count();
     

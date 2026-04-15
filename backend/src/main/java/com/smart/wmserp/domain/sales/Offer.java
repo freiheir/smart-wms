@@ -36,6 +36,13 @@ public class Offer {
     @Column(name = "currency")
     private String currency;
 
+    @Column(name = "manager_email")
+    private String managerEmail;
+
+    @Column(name = "remarks", length = 1000)
+    private String remarks;
+
+    @com.fasterxml.jackson.annotation.JsonManagedReference
     @Builder.Default
     @OneToMany(mappedBy = "offer", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OfferItem> items = new ArrayList<>();
