@@ -16,6 +16,12 @@
     - `WmsService`: 입고 확정, 반품, 재고 실사 조정 로직
     - `OutboundService`: **FIFO(선입선출)** 기반 출고 할당 및 Picking List 생성
     - `ReportService`: 경영진용 대시보드 통계 API (성공률, 매출/매입, 재고부족)
+- [x] **영업 관리 엑셀 자동화 (upload_data 생성):**
+    - `export_data.xlsx` 원본 업로드 및 자동 분석 로직 구현 (`InquiryExcelService`)
+    - `OfferItem` 엔티티 고도화 (20여개 엑셀 컬럼 필드 추가)
+    - 거래처 미지정 업로드 및 자동 매핑 기능 추가
+    - 가공된 `upload_data.xlsx` 다운로드 API 구현
+    - 인콰이어리 상세 조회 화면 및 완전 삭제 기능 추가
 - [x] **도메인 모델 고도화:** Partner, Item, Offer, PO, Stock, StockLot 등 10여개 엔티티 및 Repository 구축
 - [x] **빌드 오류 해결:** 패키지 이동에 따른 Import 오류 수정 및 Lombok `@Builder` 경고 해결
 - [x] **BO 프론트엔드 연동:**

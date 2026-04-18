@@ -21,7 +21,29 @@ public class OfferController {
     private final com.smart.wmserp.service.InquiryExcelService inquiryExcelService;
 
     /**
-     * 엑셀 파일을 통한 인콰이어리 대량 업로드
+     * export_data.xlsx 원본 업로드 (거래처 자동 매핑 시도)
+     */
+    @PostMapping("/upload-export")
+    public ResponseEntity<com.smart.wmserp.common.dto.InquiryUploadResponse> uploadExport(
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            @RequestParam(value = "inquiryNo", required = false) String inquiryNo) {
+        return ResponseEntity.ok(inquiryExcelService.uploadExportData(file, inquiryNo));
+    }
+
+    /**
+     * 가공된 upload_data.xlsx 다운로드
+     */
+    @GetMapping("/{id}/export-upload-data")
+    public ResponseEntity<byte[]> exportUploadData(@PathVariable Long id) throws java.io.IOException {
+        byte[] excelContent = inquiryExcelService.generateUploadDataExcel(id);
+        return org.springframework.http.ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=upload_data_" + id + ".xlsx")
+                .contentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM)
+                .body(excelContent);
+    }
+
+    /**
+     * 엑셀 파일을 통한 인콰이어리 대량 업로드 (기존 방식)
      */
     @PostMapping("/upload-excel")
     public ResponseEntity<com.smart.wmserp.common.dto.InquiryUploadResponse> uploadExcel(
@@ -67,6 +89,15 @@ public class OfferController {
     @PostMapping("/{id}/generate-po")
     public ResponseEntity<Void> generatePO(@PathVariable Long id) {
         purchaseService.convertPiToPo(id);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 오퍼 삭제 (완전 삭제)
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteOffer(@PathVariable Long id) {
+        offerRepository.deleteById(id);
         return ResponseEntity.ok().build();
     }
 

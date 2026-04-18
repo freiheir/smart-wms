@@ -18,6 +18,12 @@ const routes = [
     meta: { title: '영업 관리 (Offers)' }
   },
   {
+    path: '/sales/offers/:id',
+    name: 'OfferDetail',
+    component: () => import('../views/OfferDetail.vue'),
+    meta: { title: '오퍼 상세 내역' }
+  },
+  {
     path: '/wms/inbound',
     name: 'Inbound',
     component: () => import('../views/InboundManagement.vue'),
