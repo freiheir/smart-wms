@@ -65,7 +65,7 @@ onMounted(fetchPartners)
           </tr>
         </thead>
         <tbody>
-          <tr v-for="p in partners" :key="partnerCode">
+          <tr v-for="p in partners" :key="p.partnerCode">
             <td><code>{{ p.partnerCode }}</code></td>
             <td class="text-left">{{ p.partnerName }}</td>
             <td>
