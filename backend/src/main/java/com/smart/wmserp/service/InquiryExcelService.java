@@ -85,6 +85,60 @@ public class InquiryExcelService {
         return InquiryUploadResponse.builder().successCount(validItems.size()).build();
     }
 
+    @Transactional
+    public InquiryUploadResponse uploadInquiry(MultipartFile file, Long partnerId) {
+        Partner partner = partnerRepository.findById(partnerId).orElseThrow(() -> new RuntimeException("Partner not found: " + partnerId));
+        List<OfferItem> validItems = new ArrayList<>();
+        try (InputStream is = file.getInputStream(); Workbook workbook = WorkbookFactory.create(is)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            for (int i = 2; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i); if (row == null) continue;
+                try {
+                    String buyerPartNo = getCellValueAsString(row.getCell(2));
+                    String carName = getCellValueAsString(row.getCell(6));
+                    String orderedPartNo = getCellValueAsString(row.getCell(7));
+                    String itemClass = getCellValueAsString(row.getCell(8));
+                    String partNameEng = getCellValueAsString(row.getCell(11));
+                    String qtyStr = getCellValueAsString(row.getCell(12));
+                    String costStr = getCellValueAsString(row.getCell(13));
+                    String itemCode = getCellValueAsString(row.getCell(74));
+                    String hClass = getCellValueAsString(row.getCell(75));
+                    String kClass = getCellValueAsString(row.getCell(76));
+
+                    if (buyerPartNo == null || buyerPartNo.trim().isEmpty()) continue;
+
+                    BigDecimal quantity = parseBigDecimal(qtyStr, BigDecimal.ONE);
+                    BigDecimal purchasePrice = parseBigDecimal(costStr, BigDecimal.ZERO);
+                    BigDecimal marginRate = new BigDecimal("0.15");
+                    BigDecimal unitPrice = purchasePrice.divide(BigDecimal.ONE.subtract(marginRate), 2, RoundingMode.HALF_UP);
+
+                    String cleanPartNumber = PartNumberUtil.clean(orderedPartNo.isEmpty() ? buyerPartNo : orderedPartNo);
+                    Item item = itemRepository.findByPartNumber(cleanPartNumber).orElse(null);
+
+                    validItems.add(OfferItem.builder()
+                            .item(item).buyerPartNo(buyerPartNo).orderedPartNo(cleanPartNumber)
+                            .itemCode(itemCode).carName(carName).itemClass(itemClass).partNameEng(partNameEng)
+                            .hClass(hClass).kClass(kClass).quantity(quantity.intValue())
+                            .purchasePrice(purchasePrice).originalPurchasePrice(purchasePrice)
+                            .unitPrice(unitPrice).amount(unitPrice.multiply(quantity))
+                            .purchaseAmount(purchasePrice.multiply(quantity))
+                            .margin(unitPrice.multiply(quantity).subtract(purchasePrice.multiply(quantity)))
+                            .marginRate(marginRate).createdAt(LocalDateTime.now()).build());
+                } catch (Exception e) {}
+            }
+            if (!validItems.isEmpty()) {
+                Offer offer = Offer.builder()
+                        .inquiryNo("REQ-" + System.currentTimeMillis())
+                        .partner(partner)
+                        .status("INQUIRY").currency(partner.getCurrency() != null ? partner.getCurrency() : "USD")
+                        .createdAt(LocalDateTime.now()).build();
+                for (OfferItem oi : validItems) { offer.addItem(oi); }
+                offerService.createOffer(offer);
+            }
+        } catch (Exception e) { throw new RuntimeException(e); }
+        return InquiryUploadResponse.builder().successCount(validItems.size()).build();
+    }
+
     public byte[] generateUploadDataExcel(Long offerId) throws IOException {
         Offer offer = offerRepository.findById(offerId).orElseThrow();
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
