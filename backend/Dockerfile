@@ -3,6 +3,7 @@ WORKDIR /app
 COPY build.gradle.kts ./
 COPY gradle ./gradle
 COPY gradlew gradlew.bat ./
+RUN chmod +x gradlew
 COPY src ./src
 RUN ./gradlew build -x test --no-daemon
 
