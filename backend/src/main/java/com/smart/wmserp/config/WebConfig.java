@@ -15,7 +15,8 @@ public class WebConfig implements WebMvcConfigurer {
                     "http://127.0.0.1:*", "https://127.0.0.1:*",
                     "http://172.*.*.*:*", "https://172.*.*.*:*",
                     "http://192.168.*.*:*", "https://192.168.*.*:*",
-                    "http://10.*.*.*:*", "https://10.*.*.*:*"
+                    "http://10.*.*.*:*", "https://10.*.*.*:*",
+                    "http://64.110.100.247:*", "https://64.110.100.247:*"
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
