@@ -46,6 +46,12 @@ const routes = [
     name: 'StockStatus',
     component: () => import('../views/StockStatus.vue'),
     meta: { title: '재고 현황' }
+  },
+  {
+    path: '/settings/weights',
+    name: 'WeightSettings',
+    component: () => import('../views/WeightSettings.vue'),
+    meta: { title: '가중치 관리' }
   }
 ]
 

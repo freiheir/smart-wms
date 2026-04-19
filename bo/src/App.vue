@@ -30,6 +30,10 @@ const route = useRoute()
         <router-link to="/stock-status" class="menu-item" active-class="active">
           <span class="icon">🚚</span> 재고 현황
         </router-link>
+        <div class="menu-section mt-4 px-6 text-xs text-gray-400 uppercase">기준정보 관리</div>
+        <router-link to="/settings/weights" class="menu-item" active-class="active">
+          <span class="icon">⚖️</span> 가중치 관리
+        </router-link>
       </nav>
     </aside>
 

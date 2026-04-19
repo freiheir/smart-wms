@@ -13,11 +13,17 @@
 
 ---
 
-## 📂 2. Backend Layering & Package Structure
+## ⚙️ 2. 기준정보 관리 (Settings)
+- **가중치 관리 (WeightPolicy):** 품목 코드별 가중치(Multiplier) 설정. 도매가 기반 구매가 산출 시 사용.
+- **환율 관리 (ExchangeRate):** 기준 통화별 환율 실시간 관리.
+
+---
+
+## 📂 3. Backend Layering & Package Structure
 기존 레이어드 패턴을 유지하되, 업무 도메인별로 패키지를 세분화하여 관리합니다.
 
 - **`com.smart.wmserp.domain`:**
-    - `master`: 상품(Item), 거래처(Partner), 환율(ExchangeRate) 등 기초 마스터 정보
+    - `master`: 상품(Item), 거래처(Partner), **가중치정책(WeightPolicy)**, 환율(ExchangeRate) 등 기초 마스터 정보
     - `sales`: 인콰이어리 및 오퍼(Offer), 오퍼 품목(OfferItem)
     - `purchase`: 발주서(PurchaseOrder), 발주 품목(PurchaseOrderItem)
     - `wms`: 입고예정(InboundExpected), 재고(Stock), 재고로트(StockLot), 출고피킹(PickingList)
