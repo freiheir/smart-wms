@@ -4,50 +4,48 @@
 
 ---
 
-## 📌 현재 상태 (Last Updated: 2026-04-14)
-- **개발 단계:** Phase 2 - 영업관리 및 물류 프로세스 통합 완료
-- **주요 마일스톤:** 백엔드 핵심 엔진 구축, BO(Back Office) 주요 화면 연동, 빌드 안정화 완료
+## 📌 현재 상태 (Last Updated: 2026-04-19)
+- **개발 단계:** Phase 2 - 영업관리 및 물류 프로세스 통합 (기준정보 관리 추가 완료)
+- **주요 마일스톤:** 백엔드 핵심 엔진 구축, 기준정보(가중치/환율) 관리 시스템 도입, 달러 기반 가격 산출 로직 완성
 
-## ✅ 완료된 작업 (2026-04-14)
-- [x] **백엔드 엔진 구축:**
-    - `PricingService`: 다중 통화 환율 및 마진 시뮬레이션
-    - `OfferService`: 품번 자동 정제(`PartNumberUtil`) 및 오퍼 관리
-    - `PurchaseService`: P/I -> P/O 자동 전환 및 Vendor 매칭
-    - `WmsService`: 입고 확정, 반품, 재고 실사 조정 로직
-    - `OutboundService`: **FIFO(선입선출)** 기반 출고 할당 및 Picking List 생성
-    - `ReportService`: 경영진용 대시보드 통계 API (성공률, 매출/매입, 재고부족)
-- [x] **영업 관리 엑셀 자동화 (upload_data 생성):**
-    - `export_data.xlsx` 원본 업로드 및 자동 분석 로직 구현 (`InquiryExcelService`)
-    - `OfferItem` 엔티티 고도화 (20여개 엑셀 컬럼 필드 추가)
-    - 거래처 미지정 업로드 및 자동 매핑 기능 추가
-    - 가공된 `upload_data.xlsx` 다운로드 API 구현
-    - 인콰이어리 상세 조회 화면 및 완전 삭제 기능 추가
-- [x] **도메인 모델 고도화:** Partner, Item, Offer, PO, Stock, StockLot 등 10여개 엔티티 및 Repository 구축
-- [x] **빌드 오류 해결:** 패키지 이동에 따른 Import 오류 수정 및 Lombok `@Builder` 경고 해결
-- [x] **BO 프론트엔드 연동:**
-    - 경영 대시보드 (`Dashboard.vue`)
-    - 영업 관리 (`OfferManagement.vue`)
-    - 입고 관리 (`InboundManagement.vue`)
-    - 품목 마스터 (`ItemManagement.vue`)
-    - 거래처 관리 (`PartnerManagement.vue`)
-    - 재고 현황 (`StockStatus.vue`)
-- [x] **인프라/환경 설정:** 
-    - `npm install` 버전 충돌 해결 (`@vitejs/plugin-basic-ssl` 하향 조정)
-    - Vite Proxy 설정을 통한 BE-FE 연동 확인
+## ✅ 완료된 작업 (2026-04-19)
+- [x] **서버 환경 최적화 및 접속 문제 해결:**
+    - 원격 접속 시 발생하는 API 404 에러 해결 (CORS 설정에 서버 공인 IP `64.110.100.247` 허용)
+    - 서버(Docker)와 로컬(Spring Boot + Docker DB) 개발 환경 분리 및 가이드 정립
+- [x] **기준정보 관리 모듈 구축:**
+    - **가중치(Multiplier) 관리:** 품목 코드(CODE)별 가중치 설정 기능 구현 (BE: `WeightPolicy`, FE: `WeightSettings.vue`)
+    - **환율(Exchange Rate) 관리:** 통화별 환율 관리 기능 구현 (BE: `ExchangeRate`, FE: `ExchangeRateSettings.vue`)
+    - 환율 미등록 시 기본값(1400원) 적용 로직 도입
+- [x] **가격 산출 로직 고도화:**
+    - `도매가 * 가중치 = 구매가` 로직을 엑셀 업로드 시 자동 계산 및 DB 저장 (`OfferItem.purchasePrice`)
+    - 외화(USD 등) 단가 및 금액 소수점 2자리 반올림(`scale 2`) 적용
+    - 원화(KRW) 단가 및 금액 정수 반올림(`scale 0`) 적용
+- [x] **엑셀 및 화면 연동 강화:**
+    - 엑셀 다운로드(`upload_data`) 시 `PRICE`, `Amount` 컬럼 추가 및 동적 수식(`ROUND` 함수 포함) 적용
+    - 엑셀 내 0으로 나누기 오류 해결 (환율 절대값 직접 참조 방식 적용)
+    - 오퍼 상세 화면(`OfferDetail.vue`)에 실시간 환율 기반 PRICE/Amount 표시 기능 추가
+- [x] **데이터 정제 및 안정화:**
+    - 엑셀 업로드 시 `itemCode` 공백 제거(`trim`) 처리로 가중치 매칭률 향상
+    - DB 관리 도구(DBeaver) 연동을 위한 인프라 설정(OCI 보안 목록 및 SSH 터널링) 지원
+
+## ✅ 완료된 작업 (2026-04-14 이전)
+- [x] **백엔드 엔진 구축:** PricingService, OfferService, PurchaseService, WmsService 등 핵심 로직
+- [x] **영업 관리 엑셀 자동화:** InquiryExcelService 기반 export_data -> upload_data 변환
+- [x] **BO 프론트엔드 연동:** 대시보드, 영업, 입고, 상품, 거래처, 재고 현황 화면 구축
 
 ## 🚧 진행 중 / 문제 해결
+- **데이터 정합성 테스트:** 고도화된 가격 산출 로직 기반 실데이터 검증 진행 중.
 - **모바일 PDA 기능:** 기존 모바일 기능(React)을 고도화된 백엔드 엔진과 재연동 필요.
-- **데이터 정합성 테스트:** 실제 시나리오(부분입고, 취소 등)에 대한 엔드투엔드 테스트 필요.
 
 ## 📅 다음 목표 (Next Steps)
 1. **모바일(PDA) 고도화:** 고도화된 WMS 엔진 기반으로 모바일 입출고 스캔 화면 재구축.
-2. **엑셀 업로드 UI:** BO 영업 관리 화면에서 인콰이어리 엑셀 대량 업로드 UI 구현.
-3. **권한 관리:** 관리자/영업/창고 담당자별 접근 권한 설정.
+2. **권한 관리:** 관리자/영업/창고 담당자별 접근 권한 설정.
+3. **통계 리포트 정교화:** 실시간 환율 및 가중치가 반영된 마진 분석 리포트 화면 보완.
 
 ---
 
 ## 🤖 Gemini CLI를 위한 가이드
 새로운 세션을 시작할 때, 이 파일을 읽고 다음 질문에 답하며 업무를 재개하세요:
-1. "마지막으로 완료된 작업은 무엇인가?" (Phase 2 통합 완료)
+1. "마지막으로 완료된 작업은 무엇인가?" (기준정보 관리 및 가격 산출 로직 고도화)
 2. "다음에 즉시 시작해야 할 우선순위 작업은 무엇인가?" (모바일 PDA 연동)
-3. "이전 세션에서 해결하지 못한 기술적 난제나 메모가 있는가?" (없음, 빌드 성공 상태)
+3. "이전 세션에서 해결하지 못한 기술적 난제나 메모가 있는가?" (없음, 빌드 및 엑셀 수식 안정화 완료)

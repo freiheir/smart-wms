@@ -54,10 +54,16 @@ public class OfferService {
             Item item = itemRepository.findByPartNumber(cleanPartNumber)
                     .orElseThrow(() -> new RuntimeException("Item not found: " + cleanPartNumber));
 
-            // 3. 가격 자동 산출 (배수 및 환율 적용)
-            BigDecimal calculatedPrice = pricingService.calculateRetailPrice(
+            // 3. 가격 자동 산출 (구매가 및 판매가 산출)
+            BigDecimal purchasePrice = pricingService.calculatePurchasePrice(
                     item.getWholesalePrice(),
-                    item.getMultiplier(),
+                    req.getItemCode()
+            );
+
+            System.out.println(">>> [DEBUG] ItemCode: " + req.getItemCode() + ", OriginalPrice: " + item.getWholesalePrice() + ", CalculatedPurchasePrice: " + purchasePrice);
+
+            BigDecimal salesPrice = pricingService.calculateRetailPrice(
+                    purchasePrice,
                     item.getCurrency(),
                     offer.getCurrency(),
                     manualRate
@@ -67,8 +73,9 @@ public class OfferService {
             OfferItem offerItem = OfferItem.builder()
                     .item(item)
                     .quantity(req.getQuantity())
-                    .unitPrice(calculatedPrice)
-                    .marginRate(pricingService.calculateMarginRate(calculatedPrice, item.getWholesalePrice()))
+                    .unitPrice(salesPrice)
+                    .purchasePrice(purchasePrice)
+                    .marginRate(pricingService.calculateMarginRate(salesPrice, purchasePrice))
                     .build();
 
             offer.addItem(offerItem);

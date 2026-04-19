@@ -52,6 +52,12 @@ const routes = [
     name: 'WeightSettings',
     component: () => import('../views/WeightSettings.vue'),
     meta: { title: '가중치 관리' }
+  },
+  {
+    path: '/settings/exchange-rates',
+    name: 'ExchangeRateSettings',
+    component: () => import('../views/ExchangeRateSettings.vue'),
+    meta: { title: '환율 관리' }
   }
 ]
 

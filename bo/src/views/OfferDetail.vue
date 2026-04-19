@@ -9,11 +9,16 @@ const offerId = route.params.id
 
 const offer = ref<any>(null)
 const loading = ref(true)
+const exchangeRates = ref<any[]>([])
 
 const fetchOfferDetail = async () => {
   try {
-    const response = await axios.get(`/api/sales/offers/${offerId}`)
-    offer.value = response.data
+    const [offerRes, ratesRes] = await Promise.all([
+      axios.get(`/api/sales/offers/${offerId}`),
+      axios.get('/api/settings/exchange-rates')
+    ])
+    offer.value = offerRes.data
+    exchangeRates.value = ratesRes.data
   } catch (error) {
     console.error('상세 정보 조회 실패:', error)
     alert('데이터를 불러오는데 실패했습니다.')
@@ -21,6 +26,12 @@ const fetchOfferDetail = async () => {
     loading.value = false
   }
 }
+
+const currentRate = computed(() => {
+  if (!offer.value || !offer.value.currency) return 1400
+  const rateObj = exchangeRates.value.find((r: any) => r.currencyCode === offer.value.currency)
+  return rateObj ? rateObj.rateToKrw : 1400
+})
 
 const downloadExcel = async () => {
   try {
@@ -73,9 +84,12 @@ const summary = computed(() => {
   return { qty, amount, purchase, margin, marginRate }
 })
 
-const formatNum = (val: any) => {
+const formatNum = (val: any, decimals: number = 0) => {
   if (val === null || val === undefined) return '0'
-  return Number(val).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+  return Number(val).toLocaleString(undefined, { 
+    minimumFractionDigits: decimals, 
+    maximumFractionDigits: decimals 
+  })
 }
 </script>
 
@@ -104,11 +118,11 @@ const formatNum = (val: any) => {
         </div>
         <div class="summary-item">
           <label>총 매입액 (구매총액)</label>
-          <span class="value">{{ offer.currency }} {{ formatNum(summary.purchase) }}</span>
+          <span class="value">{{ offer.currency }} {{ formatNum(summary.purchase, offer.currency === 'KRW' ? 0 : 2) }}</span>
         </div>
         <div class="summary-item">
           <label>총 매출액 (판매총액)</label>
-          <span class="value">{{ offer.currency }} {{ formatNum(summary.amount) }}</span>
+          <span class="value">{{ offer.currency }} {{ formatNum(summary.amount, offer.currency === 'KRW' ? 0 : 2) }}</span>
         </div>
         <div class="summary-item highlight">
           <label>예상 마진</label>
@@ -134,6 +148,8 @@ const formatNum = (val: any) => {
               <th>CLASS</th>
               <th>Part Name Eng</th>
               <th>QTY REQ</th>
+              <th class="bg-sales">PRICE</th>
+              <th class="bg-sales">Amount</th>
               <th class="bg-purchase">도매가</th>
               <th class="bg-purchase">구매가</th>
               <th class="bg-purchase">구매금액</th>
@@ -159,6 +175,8 @@ const formatNum = (val: any) => {
               <td>{{ item.itemClass || '-' }}</td>
               <td class="text-left">{{ item.partNameEng || '-' }}</td>
               <td class="text-right">{{ item.quantity?.toLocaleString() }}</td>
+              <td class="text-right bold">{{ formatNum(item.unitPrice / currentRate, offer.currency === 'KRW' ? 0 : 2) }}</td>
+              <td class="text-right bold">{{ formatNum(item.quantity * (item.unitPrice / currentRate), offer.currency === 'KRW' ? 0 : 2) }}</td>
               <td class="text-right">{{ formatNum(item.originalPurchasePrice) }}</td>
               <td class="text-right">{{ formatNum(item.purchasePrice) }}</td>
               <td class="text-right">{{ formatNum(item.purchaseAmount) }}</td>

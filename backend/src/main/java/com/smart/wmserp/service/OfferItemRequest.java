@@ -8,5 +8,6 @@ import lombok.*;
 @Builder
 public class OfferItemRequest {
     private String partNumber;
+    private String itemCode;
     private Integer quantity;
 }

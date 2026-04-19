@@ -34,6 +34,9 @@ const route = useRoute()
         <router-link to="/settings/weights" class="menu-item" active-class="active">
           <span class="icon">⚖️</span> 가중치 관리
         </router-link>
+        <router-link to="/settings/exchange-rates" class="menu-item" active-class="active">
+          <span class="icon">💱</span> 환율 관리
+        </router-link>
       </nav>
     </aside>
 

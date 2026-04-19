@@ -50,7 +50,7 @@ public class InquiryExcelService {
                     String partNameEng = getCellValueAsString(row.getCell(11));
                     String qtyStr = getCellValueAsString(row.getCell(12));
                     String costStr = getCellValueAsString(row.getCell(13));
-                    String itemCode = getCellValueAsString(row.getCell(74));
+                    String itemCode = getCellValueAsString(row.getCell(74)).trim();
                     String hClass = getCellValueAsString(row.getCell(75));
                     String kClass = getCellValueAsString(row.getCell(76));
 
@@ -58,8 +58,12 @@ public class InquiryExcelService {
 
                     BigDecimal quantity = parseBigDecimal(qtyStr, BigDecimal.ONE);
                     BigDecimal purchasePrice = parseBigDecimal(costStr, BigDecimal.ZERO);
+                    
+                    // 가중치 적용된 구매가 산출 (반올림 포함)
+                    BigDecimal calculatedPurchasePrice = pricingService.calculatePurchasePrice(purchasePrice, itemCode);
+                    
                     BigDecimal marginRate = new BigDecimal("0.15"); 
-                    BigDecimal unitPrice = purchasePrice.divide(BigDecimal.ONE.subtract(marginRate), 2, RoundingMode.HALF_UP);
+                    BigDecimal unitPrice = calculatedPurchasePrice.divide(BigDecimal.ONE.subtract(marginRate), 0, RoundingMode.HALF_UP);
 
                     String cleanPartNumber = PartNumberUtil.clean(orderedPartNo.isEmpty() ? buyerPartNo : orderedPartNo);
                     Item item = itemRepository.findByPartNumber(cleanPartNumber).orElse(null);
@@ -68,10 +72,10 @@ public class InquiryExcelService {
                             .item(item).buyerPartNo(buyerPartNo).orderedPartNo(cleanPartNumber)
                             .itemCode(itemCode).carName(carName).itemClass(itemClass).partNameEng(partNameEng)
                             .hClass(hClass).kClass(kClass).quantity(quantity.intValue())
-                            .purchasePrice(purchasePrice).originalPurchasePrice(purchasePrice)
+                            .purchasePrice(calculatedPurchasePrice).originalPurchasePrice(purchasePrice)
                             .unitPrice(unitPrice).amount(unitPrice.multiply(quantity))
-                            .purchaseAmount(purchasePrice.multiply(quantity))
-                            .margin(unitPrice.multiply(quantity).subtract(purchasePrice.multiply(quantity)))
+                            .purchaseAmount(calculatedPurchasePrice.multiply(quantity))
+                            .margin(unitPrice.multiply(quantity).subtract(calculatedPurchasePrice.multiply(quantity)))
                             .marginRate(marginRate).createdAt(LocalDateTime.now()).build());
                 } catch (Exception e) {}
             }
@@ -101,7 +105,7 @@ public class InquiryExcelService {
                     String partNameEng = getCellValueAsString(row.getCell(11));
                     String qtyStr = getCellValueAsString(row.getCell(12));
                     String costStr = getCellValueAsString(row.getCell(13));
-                    String itemCode = getCellValueAsString(row.getCell(74));
+                    String itemCode = getCellValueAsString(row.getCell(74)).trim();
                     String hClass = getCellValueAsString(row.getCell(75));
                     String kClass = getCellValueAsString(row.getCell(76));
 
@@ -109,8 +113,12 @@ public class InquiryExcelService {
 
                     BigDecimal quantity = parseBigDecimal(qtyStr, BigDecimal.ONE);
                     BigDecimal purchasePrice = parseBigDecimal(costStr, BigDecimal.ZERO);
+                    
+                    // 가중치 적용된 구매가 산출 (반올림 포함)
+                    BigDecimal calculatedPurchasePrice = pricingService.calculatePurchasePrice(purchasePrice, itemCode);
+                    
                     BigDecimal marginRate = new BigDecimal("0.15");
-                    BigDecimal unitPrice = purchasePrice.divide(BigDecimal.ONE.subtract(marginRate), 2, RoundingMode.HALF_UP);
+                    BigDecimal unitPrice = calculatedPurchasePrice.divide(BigDecimal.ONE.subtract(marginRate), 0, RoundingMode.HALF_UP);
 
                     String cleanPartNumber = PartNumberUtil.clean(orderedPartNo.isEmpty() ? buyerPartNo : orderedPartNo);
                     Item item = itemRepository.findByPartNumber(cleanPartNumber).orElse(null);
@@ -119,10 +127,10 @@ public class InquiryExcelService {
                             .item(item).buyerPartNo(buyerPartNo).orderedPartNo(cleanPartNumber)
                             .itemCode(itemCode).carName(carName).itemClass(itemClass).partNameEng(partNameEng)
                             .hClass(hClass).kClass(kClass).quantity(quantity.intValue())
-                            .purchasePrice(purchasePrice).originalPurchasePrice(purchasePrice)
+                            .purchasePrice(calculatedPurchasePrice).originalPurchasePrice(purchasePrice)
                             .unitPrice(unitPrice).amount(unitPrice.multiply(quantity))
-                            .purchaseAmount(purchasePrice.multiply(quantity))
-                            .margin(unitPrice.multiply(quantity).subtract(purchasePrice.multiply(quantity)))
+                            .purchaseAmount(calculatedPurchasePrice.multiply(quantity))
+                            .margin(unitPrice.multiply(quantity).subtract(calculatedPurchasePrice.multiply(quantity)))
                             .marginRate(marginRate).createdAt(LocalDateTime.now()).build());
                 } catch (Exception e) {}
             }
@@ -147,14 +155,17 @@ public class InquiryExcelService {
             CellStyle percentStyle = workbook.createCellStyle();
             percentStyle.setDataFormat(workbook.createDataFormat().getFormat("0.00%"));
 
+            CellStyle currencyStyle = workbook.createCellStyle();
+            currencyStyle.setDataFormat(workbook.createDataFormat().getFormat("#,##0.00"));
+
             // 1행: 요약 (SUBTOTAL)
             Row summaryRow = sheet.createRow(0);
             summaryRow.createCell(12).setCellValue("Total Summary:");
             summaryRow.getCell(12).setCellStyle(headerStyle);
 
-            // 2행: 헤더 (오빠 요청대로 순서 조정!)
+            // 2행: 헤더
             Row headerRow = sheet.createRow(1);
-            String[] headers = {"No.", "Buyer Part No", "CODE", "G", "H Class", "K Class", "Company", "Car Code", "Car Name", "Ordered Part No", "Supply No.", "CLASS", "Part Name Eng", "QTY REQ", "도매가", "구매가", "구매금액", "판매가", "판매금액", "마진", "마진율"};
+            String[] headers = {"No.", "Buyer Part No", "CODE", "G", "H Class", "K Class", "Company", "Car Code", "Car Name", "Ordered Part No", "Supply No.", "CLASS", "Part Name Eng", "QTY REQ", "PRICE", "Amount", "도매가", "구매가", "구매금액", "판매가", "판매금액", "마진", "마진율"};
             for (int i = 0; i < headers.length; i++) {
                 Cell cell = headerRow.createCell(i);
                 cell.setCellValue(headers[i]);
@@ -162,8 +173,12 @@ public class InquiryExcelService {
             }
 
             int startRow = 2; int rowIdx = startRow;
+            // 현재 오퍼 통화에 대한 환율 값 직접 조회 (예: USD면 1400)
+            BigDecimal rate = pricingService.getRateToKrw(offer.getCurrency(), null);
+
             for (OfferItem item : offer.getItems()) {
-                Row row = sheet.createRow(rowIdx++);
+                Row row = sheet.getRow(rowIdx) == null ? sheet.createRow(rowIdx) : sheet.getRow(rowIdx);
+                rowIdx++;
                 int excelRow = rowIdx; 
                 row.createCell(0).setCellValue(rowIdx - startRow);
                 row.createCell(1).setCellValue(item.getBuyerPartNo());
@@ -172,39 +187,56 @@ public class InquiryExcelService {
                 row.createCell(4).setCellValue(item.getHClass());
                 row.createCell(5).setCellValue(item.getKClass());
                 row.createCell(6).setCellValue(item.getCompany());
+                row.createCell(7).setCellValue(item.getCarCode());
                 row.createCell(8).setCellValue(item.getCarName());
                 row.createCell(9).setCellValue(item.getOrderedPartNo());
+                row.createCell(10).setCellValue(item.getSupplyNo());
                 row.createCell(11).setCellValue(item.getItemClass());
                 row.createCell(12).setCellValue(item.getPartNameEng());
                 
                 row.createCell(13).setCellValue(item.getQuantity() != null ? item.getQuantity() : 0); // N: 수량
-                row.createCell(14).setCellValue(item.getOriginalPurchasePrice() != null ? item.getOriginalPurchasePrice().doubleValue() : 0); // O: 도매가
-                row.createCell(15).setCellValue(item.getPurchasePrice() != null ? item.getPurchasePrice().doubleValue() : 0); // P: 구매가
                 
-                // Q: 구매금액 = N * P
-                row.createCell(16).setCellFormula("N" + excelRow + "*P" + excelRow);
+                // O: PRICE = ROUND(판매가(T) / 환율, 2)
+                Cell priceCell = row.createCell(14);
+                priceCell.setCellFormula("ROUND(T" + excelRow + "/" + rate.toPlainString() + ", 2)");
+                priceCell.setCellStyle(currencyStyle);
                 
-                row.createCell(17).setCellValue(item.getUnitPrice() != null ? item.getUnitPrice().doubleValue() : 0); // R: 판매가
+                // P: Amount = N * O
+                Cell amountCell = row.createCell(15);
+                amountCell.setCellFormula("ROUND(N" + excelRow + "*O" + excelRow + ", 2)");
+                amountCell.setCellStyle(currencyStyle);
+
+                row.createCell(16).setCellValue(item.getOriginalPurchasePrice() != null ? item.getOriginalPurchasePrice().doubleValue() : 0); // Q: 도매가
                 
-                // S: 판매금액 = N * R
+                // R: 구매가 수식 = ROUND(Q * 가중치, 0)
+                BigDecimal multiplier = pricingService.calculatePurchasePrice(BigDecimal.ONE, item.getItemCode());
+                row.createCell(17).setCellFormula("ROUND(Q" + excelRow + "*" + multiplier.toPlainString() + ", 0)");
+                
+                // S: 구매금액 = N * R
                 row.createCell(18).setCellFormula("N" + excelRow + "*R" + excelRow);
                 
-                // T: 마진 = S - Q
-                row.createCell(19).setCellFormula("S" + excelRow + "-Q" + excelRow);
+                row.createCell(19).setCellValue(item.getUnitPrice() != null ? item.getUnitPrice().doubleValue() : 0); // T: 판매가
                 
-                // U: 마진율 = T / S
-                Cell rateCell = row.createCell(20);
-                rateCell.setCellFormula("IFERROR(T" + excelRow + "/S" + excelRow + ", 0)");
+                // U: 판매금액 = N * T
+                row.createCell(20).setCellFormula("N" + excelRow + "*T" + excelRow);
+                
+                // V: 마진 = U - S
+                row.createCell(21).setCellFormula("U" + excelRow + "-S" + excelRow);
+                
+                // W: 마진율 = V / U
+                Cell rateCell = row.createCell(22);
+                rateCell.setCellFormula("IFERROR(V" + excelRow + "/U" + excelRow + ", 0)");
                 rateCell.setCellStyle(percentStyle);
             }
 
             if (rowIdx > startRow) {
                 summaryRow.createCell(13).setCellFormula("SUBTOTAL(9,N3:N" + rowIdx + ")"); // Qty
-                summaryRow.createCell(16).setCellFormula("SUBTOTAL(9,Q3:Q" + rowIdx + ")"); // Purchase Amount
-                summaryRow.createCell(18).setCellFormula("SUBTOTAL(9,S3:S" + rowIdx + ")"); // Sales Amount
-                summaryRow.createCell(19).setCellFormula("SUBTOTAL(9,T3:T" + rowIdx + ")"); // Margin
-                Cell totalRateCell = summaryRow.createCell(20);
-                totalRateCell.setCellFormula("T1/S1");
+                summaryRow.createCell(15).setCellFormula("SUBTOTAL(9,P3:P" + rowIdx + ")"); // Amount (Currency)
+                summaryRow.createCell(18).setCellFormula("SUBTOTAL(9,S3:S" + rowIdx + ")"); // Purchase Amount (KRW)
+                summaryRow.createCell(20).setCellFormula("SUBTOTAL(9,U3:U" + rowIdx + ")"); // Sales Amount (KRW)
+                summaryRow.createCell(21).setCellFormula("SUBTOTAL(9,V3:V" + rowIdx + ")"); // Margin (KRW)
+                Cell totalRateCell = summaryRow.createCell(22);
+                totalRateCell.setCellFormula("V1/U1");
                 totalRateCell.setCellStyle(percentStyle);
             }
             workbook.write(out); return out.toByteArray();
@@ -230,14 +262,13 @@ public class InquiryExcelService {
 
     private String getCellValueAsString(Cell cell) {
         if (cell == null) return "";
-        return switch (cell.getCellType()) {
-            case STRING -> cell.getStringCellValue();
-            case NUMERIC -> String.valueOf(cell.getNumericCellValue());
-            case FORMULA -> {
-                try { yield String.valueOf(cell.getNumericCellValue()); }
-                catch (Exception e) { yield cell.getCellFormula(); }
-            }
-            default -> "";
-        };
+        CellType type = cell.getCellType();
+        if (type == CellType.STRING) return cell.getStringCellValue();
+        if (type == CellType.NUMERIC) return String.valueOf(cell.getNumericCellValue());
+        if (type == CellType.FORMULA) {
+            try { return String.valueOf(cell.getNumericCellValue()); }
+            catch (Exception e) { return cell.getCellFormula(); }
+        }
+        return "";
     }
 }
