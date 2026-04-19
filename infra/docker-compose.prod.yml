@@ -1,0 +1,22 @@
+services:
+  backend:
+    build: ../backend
+    container_name: wms_erp_backend
+    ports:
+      - "5182:5182"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/wmserp
+      - SPRING_DATASOURCE_USERNAME=wmserp_user
+      - SPRING_DATASOURCE_PASSWORD=wmserp_password
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  bo:
+    build:
+      context: ../bo
+      network: host
+    container_name: wms_erp_bo
+    ports:
+      - "5181:80"
+    restart: unless-stopped
